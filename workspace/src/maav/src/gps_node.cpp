@@ -19,6 +19,12 @@
 using namespace std;
 using namespace std::chrono_literals;
 
+geographic_msgs::GeoPoseStamped global_target;
+void global_input_cb(const geographic_msgs::GeoPoseStamped::ConstPtr &msg)
+{
+    global_target = *msg;
+}
+
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr &msg)
 {
@@ -38,6 +44,7 @@ int main(int argc, char **argv)
 
     ros::Subscriber state_sub = nh.subscribe<mavros_msgs::State>("mavros/state", 10, state_cb);
     ros::Subscriber global_pos_sub = nh.subscribe<sensor_msgs::NavSatFix>("mavros/global_position/global", 10, global_cb);
+    ros::Subscriber input_sub = nh.subscribe<geographic_msgs::GeoPoseStamped>("input_gps", 10, global_input_cb);
     ros::Publisher local_pos_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local", 10);
     ros::Publisher global_pos_pub = nh.advertise<geographic_msgs::GeoPoseStamped>("mavros/setpoint_position/global", 10);
     ros::ServiceClient arming_client = nh.serviceClient<mavros_msgs::CommandBool>("mavros/cmd/arming");
@@ -61,7 +68,7 @@ int main(int argc, char **argv)
     pose.pose.position.y = 0;
     pose.pose.position.z = 2;
 
-    geographic_msgs::GeoPoseStamped global_target;
+    
 
     //send a few setpoints before starting
     for (int i = 100; ros::ok() && i > 0; --i)
@@ -108,7 +115,7 @@ int main(int argc, char **argv)
 
                     global_target.pose.position.latitude = current_global.latitude;
                     global_target.pose.position.longitude = current_global.longitude;
-                    global_target.pose.position.altitude = 2; //current_global.altitude;
+                    global_target.pose.position.altitude = 535.28; //current_global.altitude;
 
                     break;
                 }
@@ -124,20 +131,23 @@ int main(int argc, char **argv)
 
     //mutex mtx;
 
-    thread t{[&global_pos_pub, &global_target/*, &mtx*/] {
-        while (ros::ok())
-        {
-            //std::unique_lock<mutex> lk{mtx};
-            global_pos_pub.publish(global_target);
-            std::this_thread::sleep_for(100ms);
+    // thread t{[&global_pos_pub, &global_target/*, &mtx*/] {
+    //     while (ros::ok())
+    //     {
+    //         //std::unique_lock<mutex> lk{mtx};
 
-            //ros::spinOnce();
-        }
-    }};
+
+    //         //ros::spinOnce();
+    //     }
+    // }};
 
     while (ros::ok())
     {
-        double latitude, longitude, altitude;
+        global_pos_pub.publish(global_target);
+
+        //ROS_INFO("%s", global_target.c_str());
+
+        //double latitude, longitude, altitude;
         // std::unique_lock<mutex> lk{mtx};
 
         // cin >> latitude >> longitude >> altitude;
@@ -154,6 +164,6 @@ int main(int argc, char **argv)
         rate.sleep();
     }
 
-    t.join();
+    //t.join();
     return 0;
 }
