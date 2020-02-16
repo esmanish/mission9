@@ -14,4 +14,5 @@ export GAZEBO_RESOURCE_PATH=${GAZEBO_RESOURCE_PATH}:/mission9/sim/worlds
 
 
 cd /mission9/workspace
-roslaunch px4 mavros_posix_sitl.launch
+roslaunch maav maav_mavros_posix_sitl.launch
+#roslaunch px4 mavros_posix_sitl.launch
